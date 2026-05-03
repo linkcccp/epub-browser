@@ -2,7 +2,12 @@ import os
 import zipfile
 import tempfile
 import shutil
-import xml.etree.ElementTree as ET
+try:
+    from lxml import etree
+    HAS_LXML = True
+except ImportError:
+    import xml.etree.ElementTree as ET
+    HAS_LXML = False
 import re
 import hashlib
 import base64
@@ -104,8 +109,13 @@ class EPUBProcessor:
             return None
             
         try:
-            tree = ET.parse(container_path)
-            root = tree.getroot()
+            if HAS_LXML:
+                parser = etree.XMLParser(recover=True)
+                tree = etree.parse(container_path, parser)
+                root = tree.getroot()
+            else:
+                tree = ET.parse(container_path)
+                root = tree.getroot()
             # 查找rootfile元素
             ns = {'ns': 'urn:oasis:names:tc:opendocument:xmlns:container'}
             rootfile = root.find('.//ns:rootfile', ns)
@@ -175,8 +185,13 @@ class EPUBProcessor:
         
         # 首先查找OPF中明确指定的toc
         try:
-            tree = ET.parse(os.path.join(self.extract_dir, opf_path))
-            root = tree.getroot()
+            if HAS_LXML:
+                parser = etree.XMLParser(recover=True)
+                tree = etree.parse(os.path.join(self.extract_dir, opf_path), parser)
+                root = tree.getroot()
+            else:
+                tree = ET.parse(os.path.join(self.extract_dir, opf_path))
+                root = tree.getroot()
             ns = {'opf': 'http://www.idpf.org/2007/opf'}
             
             spine = root.find('.//opf:spine', ns)
@@ -213,11 +228,13 @@ class EPUBProcessor:
             return []
             
         try:
-            # 注册命名空间
-            ET.register_namespace('', 'http://www.daisy.org/z3986/2005/ncx/')
-            
-            tree = ET.parse(ncx_full_path)
-            root = tree.getroot()
+            if HAS_LXML:
+                parser = etree.XMLParser(recover=True)
+                tree = etree.parse(ncx_full_path, parser)
+                root = tree.getroot()
+            else:
+                tree = ET.parse(ncx_full_path)
+                root = tree.getroot()
             
             # 获取书籍标题（这一步应该在 opf 文件解析那里做）
             # doc_title = root.find('.//{http://www.daisy.org/z3986/2005/ncx/}docTitle/{http://www.daisy.org/z3986/2005/ncx/}text')
@@ -289,8 +306,13 @@ class EPUBProcessor:
             return False
             
         try:
-            tree = ET.parse(opf_full_path)
-            root = tree.getroot()
+            if HAS_LXML:
+                parser = etree.XMLParser(recover=True)
+                tree = etree.parse(opf_full_path, parser)
+                root = tree.getroot()
+            else:
+                tree = ET.parse(opf_full_path)
+                root = tree.getroot()
             
             # 获取命名空间
             ns = {'opf': 'http://www.idpf.org/2007/opf',
